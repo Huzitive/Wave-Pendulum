@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave Pendulum Simulation – NEDUET Physics</title>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto auto;
+      min-height: 100vh;
+    }
+    header {
+      padding: 1rem 2rem;
+      background: #161b22;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    header h1, header h2 {
+      margin: 0;
+      font-weight: 600;
+      text-align: center;
+    }
+    header h1 { font-size: 1.35rem; color: #58a6ff; }
+    header h2 { font-size: 1rem; color: #79c0ff; }
+
+    #info-wrapper {
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    #info-box {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #c9d1d9;
+      max-width: 800px;
+      width: 100%;
+      padding: 1rem;
+    }
+    #info-box h3 {
+      color: #58a6ff;
+      margin-top: 0;
+    }
+    #info-box img {
+      display: block;
+      margin: 1rem auto;
+      max-width: 100%;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      width: 100%;
+    }
+    #controls {
+      background: #161b22;
+      padding: 1.5rem;
+      border-right: 1px solid #21262d;
+      overflow-y: auto;
+    }
+    #controls h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #79c0ff;
+    }
+    .control-group {
+      margin-bottom: 1rem;
+    }
+    .control-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+    }
+    .control-group input[type="range"] {
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+    .control-group input[type="number"] {
+      width: 100%;
+      padding: 0.35rem;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    #sim-container {
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      border-left: 1px solid #21262d;
+    }
+    canvas.sim {
+      border: 1px solid #21262d;
+      max-width: 100%;
+      height: auto;
+    }
+    #canvasTop {
+      margin-top: 1rem;
+      border: none;
+      background: #0d1117;
+    }
+
+    #btn-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    button {
+      flex: 1;
+      padding: 0.6rem;
+      border: none;
+      border-radius: 0.4rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #238636;
+      color: #fff;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+    button:disabled {
+      background: #30363d;
+      cursor: not-allowed;
+    }
+
+    #graph-section {
+      padding: 1rem;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+    }
+    #graph-section h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+      color: #79c0ff;
+      text-align: center;
+    }
+    #export-bar {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      background: #161b22;
+      color: #8b949e;
+      padding: 0.75rem;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>NEDUET, PHYSICS DEPARTMENT</h1>
+  <h2>Wave Pendulum Simulation</h2>
+</header>
+<div id="info-wrapper">
+  <div id="info-box">
+    <h3>Physics Behind the Simulation</h3>
+    <p>This simulation visualizes pendulums with varying lengths. Each follows:</p>
+    <p style="text-align:center;font-size:1.1rem">\[ \theta(t)=\theta_0\cos\bigl(\sqrt{g/L}\,t\bigr) \]</p>
+    <ul>
+      <li><strong>\(\theta(t)\)</strong> – angle at time \(t\)</li>
+      <li><strong>\(\theta_0\)</strong> – initial angle</li>
+      <li><strong>\(g\)</strong> – gravity</li>
+      <li><strong>\(L\)</strong> – length</li>
+    </ul>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Newtons_cradle_animation_book_2.gif/400px-Newtons_cradle_animation_book_2.gif" alt="Pendulum Wave Illustration">
+  </div>
+</div>
+<main>
+  <section id="controls">
+    <h3>Parameters</h3>
+    <div class="control-group"><label>Number of Pendulums</label><input type="range" id="numPend" min="5" max="30" value="15" step="1"><input type="number" id="numPendInput" min="5" max="30" value="15" step="1"></div>
+    <div class="control-group"><label>Shortest Length (m)</label><input type="range" id="minLen" min="0.2" max="1" value="0.4" step="0.01"><input type="number" id="minLenInput" min="0.2" max="1" value="0.4" step="0.01"></div>
+    <div class="control-group"><label>Longest Length (m)</label><input type="range" id="maxLen" min="0.4" max="2" value="1.6" step="0.01"><input type="number" id="maxLenInput" min="0.4" max="2" value="1.6" step="0.01"></div>
+    <div class="control-group"><label>Gravity (m/s²)</label><input type="range" id="gravity" min="1" max="20" value="9.81" step="0.01"><input type="number" id="gravityInput" min="1" max="20" value="9.81" step="0.01"></div>
+    <div class="control-group"><label>Initial Angle (°)</label><input type="range" id="theta0" min="1" max="20" value="10" step="0.5"><input type="number" id="theta0Input" min="1" max="20" value="10" step="0.5"></div>
+    <div class="control-group"><input type="checkbox" id="showTrails" checked><label for="showTrails">Show Trails</label></div>
+    <div id="btn-bar"><button id="startBtn">Start</button><button id="pauseBtn" disabled>Pause</button><button id="resetBtn">Reset</button></div>
+  </section>
+  <section id="sim-container">
+    <canvas id="canvas" class="sim" width="800" height="500"></canvas>
+    <canvas id="canvasTop" class="sim" width="800" height="200"></canvas>
+  </section>
+</main>
+<section id="graph-section">
+  <h3>θ(t) vs Time – Pendulum 1</h3>
+  <canvas id="angleChart" height="200"></canvas>
+  <div id="export-bar"><button id="exportPNG">Export PNG</button><button id="exportCSV">Export CSV</button></div>
+</section>
+<footer>Created by Huzaifa Ahmed Khan under the supervision of Ms Marium Ghulam Nabi</footer>
+<script>
+(()=>{
+  const def={numPend:15,minLen:0.4,maxLen:1.6,gravity:9.81,theta0:10};
+  const $=id=>document.getElementById(id);
+  const sliders={numPend:$("numPend"),minLen:$("minLen"),maxLen:$("maxLen"),gravity:$("gravity"),theta0:$("theta0")};
+  const inputs={numPend:$("numPendInput"),minLen:$("minLenInput"),maxLen:$("maxLenInput"),gravity:$("gravityInput"),theta0:$("theta0Input")};
+  const canvas=$("canvas"),ctx=canvas.getContext("2d"),canvasTop=$("canvasTop"),ctxTop=canvasTop.getContext("2d");
+  const startBtn=$("startBtn"),pauseBtn=$("pauseBtn"),resetBtn=$("resetBtn"),showTrails=$("showTrails");
+  Object.keys(sliders).forEach(k=>{sliders[k].oninput=()=>{inputs[k].value=sliders[k].value;update();};inputs[k].oninput=()=>{sliders[k].value=inputs[k].value;update();};});
+  const resize=()=>{const rect=canvas.parentElement.getBoundingClientRect();const dpr=window.devicePixelRatio||1;[canvas,canvasTop].forEach((c,i)=>{c.width=rect.width*dpr;c.height=(i===0?rect.height-220:200)*dpr;});[ctx,ctxTop].forEach(c=>c.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0));}
+  window.addEventListener("resize",resize);resize();
+  let pendulums=[],time=0,running=false,last=0;
+  const createPend=()=>{pendulums=[];const n=+sliders.numPend.value;const Lmin=+sliders.minLen.value,Lmax=+sliders.maxLen.value,theta0=(+sliders.theta0.value*Math.PI)/180;for(let i=0;i<n;i++){const frac=i/(n-1);pendulums.push({L:Lmin+frac*(Lmax-Lmin),theta0,theta:theta0});}}
+  const phys=dt=>{const g=+sliders.gravity.value;pendulums.forEach(p=>{const w=Math.sqrt(g/p.L);p.theta=p.theta0*Math.cos(w*time);});}
+  const draw=()=>{if(!showTrails.checked)ctx.clearRect(0,0,canvas.width,canvas.height);else{ctx.fillStyle="rgba(22,27,34,0.05)";ctx.fillRect(0,0,canvas.width,canvas.height);}const n=pendulums.length,dpr=window.devicePixelRatio||1,centerX=canvas.width/2/dpr,topY=40,spacing=20;ctx.strokeStyle="#8b949e";ctx.fillStyle="#58a6ff";ctx.lineWidth=1;for(let i=0;i<n;i++){const p=pendulums[i];const x=centerX+(i-(n-1)/2)*spacing;const bx=x+p.L*200*Math.sin(p.theta);const by=topY+p.L*200*Math.cos(p.theta);ctx.beginPath();ctx.moveTo(x,topY);ctx.lineTo(bx,by);ctx.stroke();ctx.beginPath();ctx.arc(bx,by,6,0,2*Math.PI);ctx.fill();}
+    ctxTop.clearRect(0,0,canvasTop.width,canvasTop.height);const tvCX=canvasTop.width/2/dpr,tvMY=canvasTop.height/2/dpr,amp=60,xSp=20;ctxTop.shadowBlur=12;ctxTop.shadowColor="#58a6ff";ctxTop.fillStyle="#58a6ff";for(let i=0;i<n;i++){const p=pendulums[i];const bx=tvCX+(i-(n-1)/2)*xSp;const by=tvMY+amp*Math.sin(p.theta);ctxTop.beginPath();ctxTop.arc(bx,by,6,0,2*Math.PI);ctxTop.fill();}}
+  // Chart.js setup
+  const chartCtx=$("angleChart").getContext("2d");
+  const thetaData=[];const timeData=[];
+  const angleChart=new Chart(chartCtx,{type:"line",data:{labels:timeData,datasets:[{label:"θ (rad)",data:thetaData,borderColor:"#58a6ff",borderWidth:2,tension:0.15,pointRadius:0}]},options:{responsive:true,animation:false,scales:{x:{title:{display:true,text:"Time (s)"}},y:{title:{display:true,text:"θ (rad)"}}}}});
+  const recordData=(t,theta)=>{timeData.push(t.toFixed(2));thetaData.push(theta.toFixed(4));if(timeData.length>1000){timeData.shift();thetaData.shift();}angleChart.update("none");}
+  // export
+  $("exportPNG").onclick=()=>{const link=document.createElement("a");link.download="angle-chart.png";link.href=angleChart.toBase64Image();link.click();};
+  $("exportCSV").onclick=()=>{let csv="time,theta\n";for(let i=0;i<timeData.length;i++){csv+=`${timeData[i]},${thetaData[i]}\n`;}const blob=new Blob([csv],{type:"text/csv"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="theta_data.csv";a.click();URL.revokeObjectURL(url);};
+
+  const loop=ts=>{if(!running)return;if(!last)last=ts;const dt=(ts-last)/1000;last=ts;time+=dt;phys(dt);draw();if(thetaData.length===0 || time - parseFloat(timeData[timeData.length - 1] || 0) > 0.02)recordData(time,pendulums[0].theta);requestAnimationFrame(loop);}  
+  startBtn.onclick=()=>{if(!running){running=true;last=0;requestAnimationFrame(loop);startBtn.disabled=true;pauseBtn.disabled=false;}};pauseBtn.onclick=()=>{running=false;startBtn.disabled=false;pauseBtn.disabled=true;};resetBtn.onclick=()=>{running=false;time=0;last=0;Object.keys(def).forEach(k=>{if(k==="showTrails")showTrails.checked=def[k];else{sliders[k].value=def[k];inputs[k].value=def[k];}});thetaData.length=0;timeData.length=0;angleChart.update();createPend();draw();startBtn.disabled=false;pauseBtn.disabled=true;};
+  const update=()=>{createPend();draw();};
+  createPend();draw();
+})();
+</script>
+</body>
+</html>
